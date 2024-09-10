@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Delivery Information</title>
+
+</head>
+<body>
+    <h1>Delivery Information</h1>
+    <table>
+    <tr>
+        <th>User</th>
+
+        <Th>
+            meal_type
+        </Th>
+        <th>Quantity</th>
+        <th>
+            orderplacedtime
+        </th>
+    </tr>
+    {% for data in delivery_info %}
+    <tr>
+        <td>{{ data.mo_user__name }}</td>
+        <td>{{ data.meal_type }}</td>
+
+        <td>{{ data.quantity }}</td>
+        <td>
+            {{data.orderplacedtime}}
+        </td>
+      <td>
+    <button>Go</button>
+</td>
+
+
+    </tr>
+    {% endfor %}
+</table>
+
+
+
+</body>
+</html>

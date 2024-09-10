@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Remaining Boxes</title>
+</head>
+<body>
+    <h1>Remaining Boxes</h1>
+    <table>
+        <thead>
+            <tr>
+
+                <th>mo_user</th>
+
+                <th>meal_type_id</th>
+
+                <th>quantity</th>
+
+                <th>delivered status</th>
+
+            </tr>
+        </thead>
+        <tbody>
+            {% for data in delivery_data %}
+            <tr>
+                <td>{{ data.mo_user__name }}</td>
+                <td>{{ data.meal_type}}</td>
+                <td>{{ data.quantity }}</td>
+                <td>{{ data.delivered_status }}</td>
+
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>

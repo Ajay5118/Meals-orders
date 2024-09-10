@@ -1,0 +1,208 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ quiz.title }} - MIDI Quiz</title>
+    <script src="https://cdn.jsdelivr.net/npm/webmidi@latest/dist/iife/webmidi.iife.min.js"></script>
+    <style>
+        .question { margin-bottom: 20px; }
+        .choice { margin: 10px 0; }
+        .choice.correct { background-color: #aaffaa; }
+        .choice.incorrect { background-color: #ffaaaa; }
+        #message { font-weight: bold; margin: 10px 0; }
+        #midiStatus { margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+    <h1>{{ quiz.title }}</h1>
+    <p>{{ quiz.description }}</p>
+    <div id="midiStatus">MIDI Status: Initializing...</div>
+
+    <div id="quizContainer">
+        <div id="questionContainer">
+            <h3 id="questionText">{{ question.text }}</h3>
+            {% if question.audio %}
+            <audio id="questionAudio" src="{{ question.audio.url }}" controls></audio>
+            {% endif %}
+        </div>
+
+        <form id="quizForm" method="post" action="{% url 'take_quiz' quiz.id %}">
+            {% csrf_token %}
+            <div id="choicesContainer">
+                {% for choice in question.options.all %}
+                <div class="choice" data-midi-note="{{ choice.midi_note }}">
+                    <label>
+                        <input type="radio" name="selected_choice" value="{{ choice.id }}" required>
+                        <span class="choiceText">{{ choice.text }}</span>
+                    </label>
+                </div>
+                {% endfor %}
+            </div>
+            <button type="submit" id="submitAnswer">Submit Answer</button>
+        </form>
+    </div>
+
+    <div id="message"></div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.getElementById('quizForm');
+        const questionContainer = document.getElementById('questionContainer');
+        const choicesContainer = document.getElementById('choicesContainer');
+        const messageDiv = document.getElementById('message');
+        const midiStatusElement = document.getElementById('midiStatus');
+        let currentMidiInput = null;
+
+        // WebMidi setup
+        function setupWebMidi() {
+            WebMidi
+                .enable()
+                .then(onMidiEnabled)
+                .catch(err => {
+                    console.error('WebMidi enable failed:', err);
+                    updateMidiStatus('WebMidi enable failed: ' + err.message);
+                });
+        }
+
+        function onMidiEnabled() {
+            updateMidiStatus('WebMidi enabled');
+            if (WebMidi.inputs.length < 1) {
+                updateMidiStatus('No MIDI input devices detected');
+            } else {
+                updateMidiStatus(WebMidi.inputs.length + ' MIDI input(s) detected');
+                currentMidiInput = WebMidi.inputs[0];
+                currentMidiInput.addListener("noteon", handleMidiInput);
+            }
+        }
+
+        function updateMidiStatus(status) {
+            console.log('MIDI Status:', status);
+            midiStatusElement.textContent = 'MIDI Status: ' + status;
+        }
+
+        function handleMidiInput(e) {
+            const midiNote = e.note.number;
+            console.log("MIDI Note received:", midiNote);
+            const choices = document.querySelectorAll('.choice');
+            choices.forEach(choice => {
+                if (parseInt(choice.dataset.midiNote) === midiNote) {
+                    const radio = choice.querySelector('input[type="radio"]');
+                    radio.checked = true;
+                    form.dispatchEvent(new Event('submit'));
+                }
+            });
+        }
+
+        // Form submission handler
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(form);
+
+            fetch(form.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken')
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'quiz_complete') {
+                    window.location.href = data.result_url;
+                } else {
+                    updateQuestion(data);
+                }
+            });
+        });
+
+        function updateQuestion(data) {
+            messageDiv.textContent = data.message;
+
+            if (data.status === 'correct' || data.status === 'show_correct') {
+                if (data.next_question) {
+                    document.getElementById('questionText').textContent = data.next_question.text;
+                    updateChoices(data.next_question.options);
+                    if (document.getElementById('questionAudio')) {
+                        document.getElementById('questionAudio').src = data.next_question.audio_url || '';
+                    }
+                } else {
+                    questionContainer.innerHTML = '<h3>Quiz Completed!</h3>';
+                    choicesContainer.innerHTML = '';
+                    document.getElementById('submitAnswer').style.display = 'none';
+                }
+            } else if (data.status === 'incorrect') {
+                highlightIncorrectChoice();
+            }
+        }
+
+        function updateChoices(choices) {
+            choicesContainer.innerHTML = choices.map(choice => `
+                <div class="choice" data-midi-note="${choice.midi_note}">
+                    <label>
+                        <input type="radio" name="selected_choice" value="${choice.id}" required>
+                        <span class="choiceText">${choice.text}</span>
+                    </label>
+                </div>
+            `).join('');
+        }
+
+        function highlightIncorrectChoice() {
+            const selectedChoice = document.querySelector('input[name="selected_choice"]:checked');
+            if (selectedChoice) {
+                selectedChoice.closest('.choice').classList.add('incorrect');
+            }
+        }
+
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        // Initialize WebMidi
+        setupWebMidi();
+    });
+    </script>
+</body>
+</html>
+
+
+
+<!--<!DOCTYPE html>-->
+<!--<html lang="en">-->
+<!--<head>-->
+<!--    <meta charset="UTF-8">-->
+<!--    <meta name="viewport" content="width=device-width, initial-scale=1.0">-->
+<!--    <title>{{ quiz.title }}</title>-->
+<!--</head>-->
+<!--<body>-->
+<!--    <h1>{{ quiz.title }}</h1>-->
+<!--    <p>{{ quiz.description }}</p>-->
+<!--    <form method="post" action="{% url 'take_quiz' quiz.id %}">-->
+<!--        {% csrf_token %}-->
+<!--        {% for question in quiz.questions.all %}-->
+<!--        <h3>{{ question.text }}</h3>-->
+<!--        {% for choice in question.choices.all %}-->
+<!--        <label>-->
+<!--            <input type="radio" name="question_{{ question.id }}" value="{{ choice.id }}" required>-->
+<!--            {{ choice.text }}-->
+<!--        </label><br>-->
+<!--        {% endfor %}-->
+<!--        {% endfor %}-->
+<!--        <button type="submit">Submit</button>-->
+<!--    </form>-->
+<!--</body>-->
+<!--</html>-->
+
+

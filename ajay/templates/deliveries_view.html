@@ -1,0 +1,27 @@
+
+{% block content %}
+  <h2> Delivery user details</h2>
+
+  <form method="post">
+    {% csrf_token %}
+    <label for="mealorder">Meal Order:</label>
+    <select id="mealorder" name="mealorder">
+      {% for mealorder in mealorders %}
+        <option value="{{ mealorder.id }}">{{ mealorder.mo_user.name }}  -  {{ mealorder.meal_type.meals_name }}  - {{mealorder.orderplacedtime}}</option>
+      {% endfor %}
+    </select><br>
+
+
+    <label for="boxes_received">Boxes Received:</label>
+    <input type="number" id="boxes_received" name="boxes_received"><br>
+
+    <label for="boxes_given">Boxes Given:</label>
+    <input type="number" id="boxes_given" name="boxes_given"><br>
+
+
+
+    <button type="submit">Submit</button>
+  </form>
+
+
+{% endblock %}

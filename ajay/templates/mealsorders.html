@@ -1,0 +1,31 @@
+
+
+{% block content %}
+<div class="order-form">
+    <h2>Place Your Meal Order</h2>
+    {% if success %}
+        <p>Your order has been placed successfully!</p>
+    {% endif %}
+    <form action="{% url 'get_meals_orders' %}" method="POST">
+        {% csrf_token %}
+
+        <div class="form-group">
+            <label for="quantity">Quantity:</label>
+            <input type="number" name="quantity" id="quantity" min="1" required>
+        </div>
+
+        <div class="form-group">
+            <label>Meal Type:</label>
+            <div class="radio-group">
+                <label for="lunch">
+                    <input type="radio" name="meal_type" id="lunch" value="lunch" required> Lunch
+                </label>
+                <label for="dinner">
+                    <input type="radio" name="meal_type" id="dinner" value="dinner"> Dinner
+                </label>
+            </div>
+        </div>
+        <button type="submit" class="order-button" >Place Order</button>
+    </form>
+</div>
+{% endblock  %}

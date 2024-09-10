@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Subscription & Payment</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .form-container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            max-width: 400px;
+            width: 100%;
+        }
+        .form-container h2 {
+            margin-bottom: 20px;
+        }
+        .form-container label {
+            display: block;
+            margin-bottom: 10px;
+        }
+        .form-container input[type="radio"] {
+            margin-right: 10px;
+        }
+        .form-container input[type="submit"] {
+            width: 100%;
+            padding: 10px;
+            background-color: #5cb85c;
+            border: none;
+            border-radius: 3px;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        .form-container input[type="submit"]:hover {
+            background-color: #4cae4c;
+        }
+    </style>
+</head>
+<body>
+    <div class="form-container">
+
+
+        <h2>Choose Your Subscription Plan</h2>
+        <form action="/api/ajay/subcribe" method="POST">
+              {% csrf_token %}
+        <input type="hidden" id="token" name="token" value={{response.token}}>
+            <label>
+        <input type="radio" name="plan" value="10" required onchange="updatePrice(this.value)">
+        10 meals
+    </label>
+           <p>amount:</p>
+
+            <h2>Select Payment Method</h2>
+            <label>
+                <input type="radio" name="payment_method" value="cod" required>
+                Cash on Delivery (COD)
+            </label>
+            <label>
+                <input type="radio" name="payment_method" value="postpay">
+                Postpay
+            </label>
+            <label>
+                <input type="radio" name="payment_method" value="subscription">
+                Subscription
+            </label>
+
+            <button type="submit" value="Proceed" onclick="location.href='{% url 'get_meals_orders' %}'">proceed</button>
+        </form>
+    </div>
+<script>
+    function updatePrice(plan) {
+        const costPerMeal = 10; // Replace with your actual cost per meal
+        const totalAmount = plan * costPerMeal;
+        document.getElementById('amount').innerText = totalAmount;
+    }
+</script>
+
+</body>
+</html>

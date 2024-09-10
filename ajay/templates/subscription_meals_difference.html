@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meal Order Confirmation</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        .container {
+            max-width: 600px;
+            margin: auto;
+            background: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+        }
+        .success {
+            color: green;
+            font-weight: bold;
+        }
+        .info {
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Meal Order Confirmation</h1>
+        {% if success %}
+            <p class="success">Your order has been successfully placed!</p>
+            <div class="info">
+                <p><strong>User:</strong> {{ user }}</p>
+                <p><strong>Plan:</strong> {{ plan }} meals</p>
+                <p><strong>Quantity ordered:</strong> {{ quantity }} meals</p>
+                <p><strong>Payment method:</strong> {{ payment_method }}</p>
+                <p><strong>Remaining meals:</strong> {{ remaining_meals }}</p>
+            </div>
+            <h2>Order Details</h2>
+            <p><strong>Meal Type:</strong> {{ order.meal_type.meals_name }}</p>
+            <p><strong>Quantity:</strong> {{ order.quantity }}</p>
+        {% else %}
+            <p>There was an error processing your order. Please try again.</p>
+        {% endif %}
+        <a href="{% url 'quiz_list'  %}">take quiz</a>
+    </div>
+</body>
+</html>

@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Delivery Information</title>
+
+</head>
+<body>
+    <h1>Delivery Information</h1>
+    <table>
+    <tr>
+        <th>User</th>
+        <th>Order Date</th>
+        <th>Quantity</th>
+    </tr>
+    {% for data in delivery_data %}
+    <tr>
+        <td>{{ data.mo_user__name }}</td>
+        <td>{{ data.order_date }}</td>
+
+        <td>{{ data.total_quantity }}</td>
+    </tr>
+    {% endfor %}
+</table>
+
+<h2>Users who need to take a subscription:</h2>
+<ul>
+    {% for user in need_subscription %}
+    <li>{{ user }}</li>
+    {% endfor %}
+</ul>
+
+</body>
+</html>
