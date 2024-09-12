@@ -1,3 +1,4 @@
+from distributed.bokeh import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import AnonymousUser
 from django.http import HttpResponse, JsonResponse
@@ -23,6 +24,7 @@ from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.core.files.base import ContentFile
 from django.db.models import Avg
 from django.shortcuts import render, get_object_or_404
+from django.urls import reverse
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.generics import CreateAPIView
@@ -182,7 +184,7 @@ class ValidateOTP(CreateAPIView):
         # Render the HTML form
         return render(request, 'otpvalidation.html')
 
-    #print(requests)
+    # print(requests)
 
     def post(self, request, format=None):
         # Get the patient if present or result None.
@@ -504,9 +506,35 @@ def quiz_list(request):
     return render(request, 'quiz_list.html', {'quizzes': quizzes})
 
 
+def get_next_question_data(question):
+    """
+    Returns a dictionary with question data including the audio URL.
+    """
+    question_data = {
+        'text': question.text,
+        'audio_url': question.audio.url if question.audio else '',
+        'options': [
+            {
+                'id': option.id,
+                'text': option.text,
+                'midi_note': option.midi_note,
+                'is_correct': option.is_correct
+            } for option in question.choices.all()
+        ]
+    }
+    return question_data
+
+
 @api_view(["GET", 'POST'])
+@authentication_classes([SessionAuthentication, TokenAuthentication])
+@permission_classes([IsAuthenticated])
 def take_quiz(request, quiz_id):
     print(f"Entering take_quiz view with quiz_id: {quiz_id}")
+    print(f"User: {request.user}, Is authenticated: {request.user.is_authenticated}")
+
+    # If user is not authenticated, return an error or redirect to login
+    if not request.user.is_authenticated:
+        return redirect('login')
     quiz = get_object_or_404(Quiz, pk=quiz_id)
 
     # Get or initialize the user's progress
@@ -518,13 +546,16 @@ def take_quiz(request, quiz_id):
         print("POST request received")
 
         # Get the current question
+
         questions = list(quiz.questions.all())
+        print(questions)
         if current_question_index >= len(questions):
             return JsonResponse({'status': 'quiz_complete', 'score': score, 'total': len(questions)})
 
         current_question = questions[current_question_index]
 
         selected_choice_id = request.POST.get('selected_choice')
+        print(selected_choice_id)
         if selected_choice_id:
             selected_choice = Options.objects.get(pk=selected_choice_id)
 
@@ -535,12 +566,14 @@ def take_quiz(request, quiz_id):
                 attempts = 0
                 message = "Correct! Moving to the next question."
                 status = 'correct'
+                print(score)
             else:
                 # Wrong answer
                 attempts += 1
                 if attempts >= 2:
                     # After two attempts, show the correct answer and move to the next question
                     correct_choice = current_question.options.filter(is_correct=True).first()
+                    print(correct_choice)
                     message = f"The correct answer is: {correct_choice.text}. Moving to the next question."
                     current_question_index += 1
                     attempts = 0
@@ -562,25 +595,23 @@ def take_quiz(request, quiz_id):
                     score=score,
                     total_questions=len(questions)
                 )
+                print(result)
                 return JsonResponse({
                     'status': 'quiz_complete',
                     'score': score,
                     'total': len(questions),
                     'result_url': reverse('quiz_result', kwargs={'quiz_id': quiz.id, 'result_id': result.id})
                 })
+            print(JsonResponse)
 
             # Prepare next question
             next_question = questions[current_question_index] if current_question_index < len(questions) else None
-
             return JsonResponse({
                 'status': status,
                 'message': message,
-                'next_question': {
-                    'text': next_question.text if next_question else None,
-                    'options': [{'id': o.id, 'text': o.text, 'midi_note': o.midi_note} for o in
-                                next_question.options.all()] if next_question else None
-                } if next_question else None
+                'next_question': get_next_question_data(next_question) if next_question else None
             })
+
 
     # For GET requests or if no choice selected
     questions = list(quiz.questions.all())
@@ -589,17 +620,30 @@ def take_quiz(request, quiz_id):
         return redirect('quiz_list')  # Or wherever you want to redirect after quiz completion
 
     current_question = questions[current_question_index]
-
-    return render(request, 'take_quiz.html', {
+    options = current_question.choices.all()
+    print(options)
+    context = {
         'quiz': quiz,
         'question': current_question,
-        'midi_enabled': True  # Flag to enable MIDI functionality in template
-    })
+        'options': options,
+        'midi_enabled': True
+    }
+    print(context)
+
+    return render(request, 'take_quiz.html', context)
+
 
 @api_view(["GET", 'POST'])
+@authentication_classes([SessionAuthentication, TokenAuthentication])
+@permission_classes([IsAuthenticated])
 def quiz_result(request, quiz_id, result_id):
     quiz = get_object_or_404(Quiz, pk=quiz_id)
-    result = get_object_or_404(QuizResult, pk=result_id, user=request.user, quiz=quiz)
+    if request.user.is_authenticated:
+        result = get_object_or_404(QuizResult, pk=result_id, user=request.user, quiz=quiz)
+    else:
+        # Handle anonymous users differently (e.g., no saved result)
+        return redirect('login')
+    print(result)
 
     # Clear session data for this quiz
     request.session.pop(f'quiz_{quiz_id}_current_question', None)
@@ -611,6 +655,9 @@ def quiz_result(request, quiz_id, result_id):
         'result': result
     })
 
+
+def quiz_completed(request):
+    return render(request, 'home.html')
 
 
 @api_view(["GET", 'POST'])
@@ -625,5 +672,3 @@ def check_midi_answer(request, question_id):
 #     quiz = get_object_or_404(Quiz, pk=quiz_id)
 #     result = QuizResult.objects.filter(user=request.user, quiz=quiz).latest('completed_at')
 #     return render(request, 'quiz_result.html', {'quiz': quiz, 'result': result})
-
-

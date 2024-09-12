@@ -197,6 +197,7 @@ class QuizResult(models.Model):
     quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE)
     score = models.IntegerField()
     completed_at = models.DateTimeField(auto_now_add=True)
+    total_questions = models.IntegerField(null=True, blank=True)
 
     def __str__(self):
         return f"{self.user.username} - {self.quiz.title} - Score: {self.score}"

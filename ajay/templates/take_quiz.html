@@ -1,4 +1,3 @@
-{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -9,8 +8,8 @@
     <style>
         .question { margin-bottom: 20px; }
         .choice { margin: 10px 0; }
-        .choice.correct { background-color: #aaffaa; }
-        .choice.incorrect { background-color: #ffaaaa; }
+        .choice.correct { background-color: #aaffaa; } /* Green for correct */
+        .choice.incorrect { background-color: #ffaaaa; } /* Red for incorrect */
         #message { font-weight: bold; margin: 10px 0; }
         #midiStatus { margin-bottom: 10px; }
     </style>
@@ -31,8 +30,8 @@
         <form id="quizForm" method="post" action="{% url 'take_quiz' quiz.id %}">
             {% csrf_token %}
             <div id="choicesContainer">
-                {% for choice in question.options.all %}
-                <div class="choice" data-midi-note="{{ choice.midi_note }}">
+                {% for choice in options %}
+                <div class="choice" data-midi-note="{{ choice.midi_note }}" data-is-correct="{{ choice.is_correct }}">
                     <label>
                         <input type="radio" name="selected_choice" value="{{ choice.id }}" required>
                         <span class="choiceText">{{ choice.text }}</span>
@@ -85,14 +84,32 @@
         function handleMidiInput(e) {
             const midiNote = e.note.number;
             console.log("MIDI Note received:", midiNote);
+
             const choices = document.querySelectorAll('.choice');
+            let correctChoice = null;
+            let wrongChoice = true;
+
             choices.forEach(choice => {
+                const isCorrect = choice.dataset.isCorrect === 'true';
                 if (parseInt(choice.dataset.midiNote) === midiNote) {
                     const radio = choice.querySelector('input[type="radio"]');
                     radio.checked = true;
-                    form.dispatchEvent(new Event('submit'));
+
+                    if (isCorrect) {
+                        correctChoice = choice;
+                        choice.classList.add('correct');
+                        form.dispatchEvent(new Event('submit'));  // Auto-submit on correct answer
+                        wrongChoice = false;
+                    } else {
+                        choice.classList.add('incorrect');
+                        alert('Wrong note! Try again.');  // Show alert on wrong answer
+                    }
                 }
             });
+
+            if (wrongChoice) {
+                console.log("No correct choice was selected.");
+            }
         }
 
         // Form submission handler
@@ -139,7 +156,7 @@
 
         function updateChoices(choices) {
             choicesContainer.innerHTML = choices.map(choice => `
-                <div class="choice" data-midi-note="${choice.midi_note}">
+                <div class="choice" data-midi-note="${choice.midi_note}" data-is-correct="${choice.is_correct}">
                     <label>
                         <input type="radio" name="selected_choice" value="${choice.id}" required>
                         <span class="choiceText">${choice.text}</span>
@@ -176,6 +193,8 @@
     </script>
 </body>
 </html>
+
+
 
 
 

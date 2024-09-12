@@ -27,6 +27,7 @@ urlpatterns = [
     django.urls.path('ad/', views.display_ad, name='display_ad'),
     django.urls.path('quiz_list', views.quiz_list, name='quiz_list'),
     django.urls.path('<int:quiz_id>/', views.take_quiz, name='take_quiz'),
-    django.urls.path('<int:quiz_id>/result/', views.quiz_result, name='quiz_result'),
+    django.urls.path('api/ajay/<int:quiz_id>/result/<int:result_id>/', views.quiz_result, name='quiz_result'),
     django.urls.path('check_midi/<int:question_id>/', views.check_midi_answer, name='check_midi_answer'),
+    django.urls.path('quiz_completed', views.quiz_completed, name='quiz_completed')
 ]

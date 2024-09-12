@@ -6,7 +6,7 @@
     {% if success %}
         <p>Your order has been placed successfully!</p>
     {% endif %}
-    <form action="{% url 'get_meals_orders' %}" method="POST">
+    <form action="{% url 'quiz_list' %}" method="POST">
         {% csrf_token %}
 
         <div class="form-group">

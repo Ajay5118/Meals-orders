@@ -6,8 +6,11 @@
     <title>Quiz Result: {{ quiz.title }}</title>
 </head>
 <body>
+    <form id="submit" action="{% url 'quiz_completed' %}" method="POST">
+        {% csrf_token %}
     <h1>Quiz Result: {{ quiz.title }}</h1>
     <p>Your score: {{ result.score }} out of {{ quiz.questions.count }}</p>
     <a href="{% url 'quiz_list' %}">Back to Quiz List</a>
+    </form>
 </body>
 </html>
